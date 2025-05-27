@@ -19,8 +19,8 @@ rgen: ; xorshift32 implementation (randint gen)
     mov r11d, r10d 
     shr r11d, 27 
     xor r10d, r11d 
-    mov r8d, 2685821657736338717 
-    imul r10d, r8d        ; FIXED: imul instead of mul
+    mov r8d, 0xD2D64D ; 32 bit relative prime :3 
+    imul r10d, r8d 
     mov [0x00ff], r10d 
     ret 
 
