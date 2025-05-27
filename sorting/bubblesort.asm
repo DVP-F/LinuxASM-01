@@ -1,15 +1,19 @@
 section .data
     newline db 0x0A    ; newline character
+    seed dw 0          ; Proper seed storage
+
+section .bss
+    array resd 20      ; Reserve space for 20 integers
 
 section .text 
     global _start 
 
 rseed: 
-    mov [0x00ff], r10d ; seeding 
+    mov [seed], r10d   ; seeding 
     ret 
 
 rgen: ; xorshift32 implementation (randint gen) 
-    mov r10d, [0x00ff] 
+    mov r10d, [seed] 
     mov r11d, r10d 
     shr r11d, 12 
     xor r10d, r11d 
@@ -21,7 +25,7 @@ rgen: ; xorshift32 implementation (randint gen)
     xor r10d, r11d 
     mov r8d, 0xD2D64D ; 32 bit relative prime :3 
     imul r10d, r8d 
-    mov [0x00ff], r10d 
+    mov [seed], r10d 
     ret 
 
 _start: 
@@ -32,7 +36,7 @@ _start:
     mov rbx, 0
 .fill_array:
     call rgen
-    mov [0x0aff + rbx*4], r10d
+    mov [array + rbx*4], r10d
     inc rbx
     loop .fill_array
 
@@ -42,14 +46,14 @@ _start:
     xor rbx, rbx
 
 .sort_inner:
-    mov eax, [0x0aff + rbx*4]
-    mov edx, [0x0aff + rbx*4 + 4]
+    mov eax, [array + rbx*4]
+    mov edx, [array + rbx*4 + 4]
     cmp eax, edx
     jbe .no_swap
 
     ; swap
-    mov [0x0aff + rbx*4], edx
-    mov [0x0aff + rbx*4 + 4], eax
+    mov [array + rbx*4], edx
+    mov [array + rbx*4 + 4], eax
     inc r12d
 
 .no_swap:
@@ -61,12 +65,12 @@ _start:
 
 post:
     mov rcx, 20              ; 20 numbers to print
-    mov rsi, 0x0aff          ; Starting address of numbers
-    mov rdi, 1               ; File descriptor (stdout)
+    mov rsi, array 
+    mov rdi, 1 
 
 .L3:
-    mov eax, [rsi]           ; Load the number
-    call print_number        ; Convert and print it
+    mov eax, [rsi]           ; Load the number, convert and print it
+    call print_number 
     add rsi, 4               ; Move to next number (dword)
     loop .L3
 
